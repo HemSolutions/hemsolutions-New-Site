@@ -1,285 +1,289 @@
 import { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, FileText, Users, Package, CreditCard, 
-  Bell, BarChart3, Settings, ChevronDown,
-  TrendingUp, AlertCircle, CheckCircle,
-  Calendar, MoreVertical, ArrowRight
+  LayoutDashboard, FileText, Receipt, Users, Package, CreditCard, 
+  Bell, BarChart3, Settings, ChevronDown, ChevronRight, LogOut,
+  Plus, List, FileCheck, RotateCcw, Wallet, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-// Import management components - using default imports
-import CustomersManagement from './CustomersManagement';
-import InvoicesManagement from './InvoicesManagement';
-import SettingsManagement from './SettingsManagement';
-import ReportsManagement from './ReportsManagement';
-import WorkersManagement from './WorkersManagement';
+import OverviewPanel from './admin/OverviewPanel';
+import InvoiceCreate from './admin/InvoiceCreate';
+import InvoiceList from './admin/InvoiceList';
+import InvoiceRUT from './admin/InvoiceRUT';
+import CustomerCreate from './admin/CustomerCreate';
+import CustomerList from './admin/CustomerList';
+import PaymentRegister from './admin/PaymentRegister';
+import PaymentList from './admin/PaymentList';
+import ReminderCreate from './admin/ReminderCreate';
+import ReminderList from './admin/ReminderList';
+import ReportsPanel from './admin/ReportsPanel';
+import SettingsPanel from './admin/SettingsPanel';
 import BookingsManagement from './BookingsManagement';
+import WorkersManagement from './WorkersManagement';
 import ReceiptsManagement from './ReceiptsManagement';
-import RemindersManagement from './RemindersManagement';
 
-interface DashboardStats {
-  totalSalesYear: number;
-  totalSalesMonth: number;
-  salesChangeYear: number;
-  salesChangeMonth: number;
-  pendingReminders: number;
-  incomingPayments: number;
-  totalCustomers: number;
-  totalInvoices: number;
-  paidInvoices: number;
-  pendingInvoices: number;
-  overdueInvoices: number;
-}
-
-interface TopCustomer {
+interface SubMenuItem {
   id: string;
-  name: string;
-  sales: number;
+  label: string;
+  icon?: React.ElementType;
 }
 
-interface ReminderCustomer {
+interface MenuItem {
   id: string;
-  name: string;
-  email: string;
-  phone: string;
-  lastInvoiceDate: string;
-  amountDue: number;
-  daysOverdue: number;
+  label: string;
+  icon: React.ElementType;
+  subMenu?: SubMenuItem[];
 }
+
+const menuItems: MenuItem[] = [
+  { id: 'overview', label: 'Översikt', icon: LayoutDashboard },
+  { 
+    id: 'faktura', 
+    label: 'Faktura', 
+    icon: FileText,
+    subMenu: [
+      { id: 'invoice-create', label: 'Skapa ny', icon: Plus },
+      { id: 'invoice-rut', label: 'Skapa ny RUT', icon: FileCheck },
+      { id: 'invoice-list', label: 'Lista', icon: List },
+      { id: 'invoice-rut-apply', label: 'Ansök RUT', icon: RotateCcw },
+      { id: 'invoice-rut-close', label: 'Avslut RUT', icon: FileCheck },
+    ]
+  },
+  { 
+    id: 'kvitto', 
+    label: 'Kvitto', 
+    icon: Receipt,
+    subMenu: [
+      { id: 'receipt-create', label: 'Skapa ny', icon: Plus },
+      { id: 'receipt-list', label: 'Lista', icon: List },
+    ]
+  },
+  { 
+    id: 'kund', 
+    label: 'Kund', 
+    icon: Users,
+    subMenu: [
+      { id: 'customer-create', label: 'Skapa ny', icon: Plus },
+      { id: 'customer-list', label: 'Lista', icon: List },
+    ]
+  },
+  { 
+    id: 'artikel', 
+    label: 'Artikel', 
+    icon: Package,
+    subMenu: [
+      { id: 'article-create', label: 'Skapa ny', icon: Plus },
+      { id: 'article-list', label: 'Lista', icon: List },
+    ]
+  },
+  { 
+    id: 'betalning', 
+    label: 'Betalning', 
+    icon: CreditCard,
+    subMenu: [
+      { id: 'payment-register', label: 'Registrera', icon: Wallet },
+      { id: 'payment-list', label: 'Lista', icon: List },
+    ]
+  },
+  { 
+    id: 'paminnelse', 
+    label: 'Påminnelse', 
+    icon: Bell,
+    subMenu: [
+      { id: 'reminder-create', label: 'Skapa ny', icon: Plus },
+      { id: 'reminder-list', label: 'Lista', icon: List },
+    ]
+  },
+  { 
+    id: 'rapporter', 
+    label: 'Rapporter', 
+    icon: BarChart3,
+    subMenu: [
+      { id: 'reports-sales', label: 'Försäljning', icon: BarChart3 },
+      { id: 'reports-customers', label: 'Kunder', icon: Users },
+      { id: 'reports-services', label: 'Tjänster', icon: Package },
+    ]
+  },
+  { 
+    id: 'installningar', 
+    label: 'Inställningar', 
+    icon: Settings,
+    subMenu: [
+      { id: 'settings-company', label: 'Företag', icon: LayoutDashboard },
+      { id: 'settings-invoice', label: 'Faktura', icon: FileText },
+      { id: 'settings-email', label: 'Email/SMS', icon: Bell },
+      { id: 'settings-users', label: 'Användare', icon: Users },
+    ]
+  },
+];
 
 export default function AdminDashboard({ apiBaseUrl }: { apiBaseUrl: string }) {
   const [activeView, setActiveView] = useState('overview');
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['faktura', 'kund']);
-  const [stats, setStats] = useState<DashboardStats>({
-    totalSalesYear: 0,
-    totalSalesMonth: 0,
-    salesChangeYear: 0,
-    salesChangeMonth: 0,
-    pendingReminders: 0,
-    incomingPayments: 0,
-    totalCustomers: 0,
-    totalInvoices: 0,
-    paidInvoices: 0,
-    pendingInvoices: 0,
-    overdueInvoices: 0
-  });
-  const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
-  const [reminderCustomers, setReminderCustomers] = useState<ReminderCustomer[]>([]);
-  const [recentInvoices, setRecentInvoices] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [adminName, setAdminName] = useState('Admin');
 
   useEffect(() => {
-    fetchDashboardData();
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        const parsed = JSON.parse(user);
+        setAdminName(parsed.name || parsed.email || 'Admin');
+      } catch (e) {}
+    }
   }, []);
 
-  const fetchDashboardData = async () => {
-    setIsLoading(true);
-    try {
-      const statsRes = await fetch(`${apiBaseUrl}/admin/dashboard-stats`, {
-        credentials: 'include'
-      });
-      if (statsRes.ok) {
-        const data = await statsRes.json();
-        if (data.stats) setStats(data.stats);
-      }
-
-      const topRes = await fetch(`${apiBaseUrl}/admin/top-customers`, {
-        credentials: 'include'
-      });
-      if (topRes.ok) {
-        const data = await topRes.json();
-        if (data.customers) setTopCustomers(data.customers);
-      }
-
-      const remindersRes = await fetch(`${apiBaseUrl}/admin/reminders`, {
-        credentials: 'include'
-      });
-      if (remindersRes.ok) {
-        const data = await remindersRes.json();
-        if (data.customers) setReminderCustomers(data.customers);
-      }
-
-      const invoicesRes = await fetch(`${apiBaseUrl}/invoices?limit=5`, {
-        credentials: 'include'
-      });
-      if (invoicesRes.ok) {
-        const data = await invoicesRes.json();
-        if (data.invoices) setRecentInvoices(data.invoices.slice(0, 5));
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const toggleMenu = (menu: string) => {
+  const toggleMenu = (menuId: string) => {
     setExpandedMenus(prev => 
-      prev.includes(menu) 
-        ? prev.filter(m => m !== menu)
-        : [...prev, menu]
+      prev.includes(menuId) 
+        ? prev.filter(m => m !== menuId)
+        : [...prev, menuId]
     );
   };
 
-  const menuItems = [
-    { id: 'overview', label: 'Översikt', icon: LayoutDashboard },
-    { id: 'invoices', label: 'Fakturor', icon: FileText },
-    { id: 'receipts', label: 'Kvitton', icon: CreditCard },
-    { id: 'customers', label: 'Kunder', icon: Users },
-    { id: 'workers', label: 'Arbetare', icon: Package },
-    { id: 'bookings', label: 'Bokningar', icon: Calendar },
-    { id: 'reminders', label: 'Påminnelser', icon: Bell },
-    { id: 'reports', label: 'Rapporter', icon: BarChart3 },
-    { id: 'settings', label: 'Inställningar', icon: Settings },
-  ];
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user');
+    window.location.href = '/';
+  };
 
   const renderContent = () => {
     switch (activeView) {
       case 'overview':
-        return (
-          <div className="space-y-6">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Försäljning (år)</p>
-                      <p className="text-2xl font-bold">{stats.totalSalesYear.toLocaleString()} kr</p>
-                    </div>
-                    <TrendingUp className="h-8 w-8 text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Försäljning (mån)</p>
-                      <p className="text-2xl font-bold">{stats.totalSalesMonth.toLocaleString()} kr</p>
-                    </div>
-                    <TrendingUp className="h-8 w-8 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Obetalda fakturor</p>
-                      <p className="text-2xl font-bold text-red-500">{stats.pendingInvoices}</p>
-                    </div>
-                    <AlertCircle className="h-8 w-8 text-red-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Kommande betalningar</p>
-                      <p className="text-2xl font-bold text-green-500">+{stats.incomingPayments.toLocaleString()} kr</p>
-                    </div>
-                    <CheckCircle className="h-8 w-8 text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Top Customers */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Årets bästa kunder</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {topCustomers.map((customer, index) => (
-                      <div key={customer.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg font-bold text-gray-400">#{index + 1}</span>
-                          <span className="font-medium">{customer.name}</span>
-                        </div>
-                        <span className="font-bold">{customer.sales.toLocaleString()} kr</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Reminders */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Att påminna</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {reminderCustomers.map((customer) => (
-                      <div key={customer.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">{customer.name}</p>
-                          <p className="text-sm text-gray-500">{customer.daysOverdue} dagar försenad</p>
-                        </div>
-                        <span className="font-bold text-red-600">{customer.amountDue.toLocaleString()} kr</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        );
-      case 'invoices':
-        return <InvoicesManagement apiBaseUrl={apiBaseUrl} />;
-      case 'receipts':
+        return <OverviewPanel apiBaseUrl={apiBaseUrl} />;
+      case 'invoice-create':
+        return <InvoiceCreate apiBaseUrl={apiBaseUrl} />;
+      case 'invoice-rut':
+        return <InvoiceCreate apiBaseUrl={apiBaseUrl} rutMode />;
+      case 'invoice-list':
+        return <InvoiceList apiBaseUrl={apiBaseUrl} />;
+      case 'invoice-rut-apply':
+        return <InvoiceRUT apiBaseUrl={apiBaseUrl} mode="apply" />;
+      case 'invoice-rut-close':
+        return <InvoiceRUT apiBaseUrl={apiBaseUrl} mode="close" />;
+      case 'receipt-create':
         return <ReceiptsManagement apiBaseUrl={apiBaseUrl} />;
-      case 'customers':
-        return <CustomersManagement apiBaseUrl={apiBaseUrl} />;
-      case 'workers':
-        return <WorkersManagement apiBaseUrl={apiBaseUrl} />;
-      case 'bookings':
-        return <BookingsManagement apiBaseUrl={apiBaseUrl} />;
-      case 'reminders':
-        return <RemindersManagement apiBaseUrl={apiBaseUrl} />;
-      case 'reports':
-        return <ReportsManagement apiBaseUrl={apiBaseUrl} />;
-      case 'settings':
-        return <SettingsManagement apiBaseUrl={apiBaseUrl} />;
+      case 'receipt-list':
+        return <ReceiptsManagement apiBaseUrl={apiBaseUrl} />;
+      case 'customer-create':
+        return <CustomerCreate apiBaseUrl={apiBaseUrl} />;
+      case 'customer-list':
+        return <CustomerList apiBaseUrl={apiBaseUrl} />;
+      case 'article-create':
+      case 'article-list':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Artiklar</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500">Artikelhantering kommer snart.</p>
+            </CardContent>
+          </Card>
+        );
+      case 'payment-register':
+        return <PaymentRegister apiBaseUrl={apiBaseUrl} />;
+      case 'payment-list':
+        return <PaymentList apiBaseUrl={apiBaseUrl} />;
+      case 'reminder-create':
+        return <ReminderCreate apiBaseUrl={apiBaseUrl} />;
+      case 'reminder-list':
+        return <ReminderList apiBaseUrl={apiBaseUrl} />;
+      case 'reports-sales':
+      case 'reports-customers':
+      case 'reports-services':
+        return <ReportsPanel apiBaseUrl={apiBaseUrl} view={activeView} />;
+      case 'settings-company':
+      case 'settings-invoice':
+      case 'settings-email':
+      case 'settings-users':
+        return <SettingsPanel apiBaseUrl={apiBaseUrl} view={activeView} />;
       default:
-        return null;
+        return <OverviewPanel apiBaseUrl={apiBaseUrl} />;
     }
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
-        <div className="p-4 border-b">
-          <h1 className="text-xl font-bold text-blue-600">HemSolutions</h1>
-          <p className="text-sm text-gray-500">Billing Dashboard</p>
+      <div className="w-64 bg-white shadow-lg flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b bg-blue-600">
+          <h1 className="text-xl font-bold text-white">HemSolutions</h1>
+          <p className="text-sm text-blue-100">Admin Panel</p>
         </div>
-        <nav className="p-4 space-y-1">
+        
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto p-2 space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
+            const isExpanded = expandedMenus.includes(item.id);
+            const hasSubMenu = item.subMenu && item.subMenu.length > 0;
+            const isActive = activeView === item.id || item.subMenu?.some(s => s.id === activeView);
+            
             return (
-              <button
-                key={item.id}
-                onClick={() => setActiveView(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  activeView === item.id
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <Icon className="h-5 w-5" />
-                <span>{item.label}</span>
-              </button>
+              <div key={item.id}>
+                <button
+                  onClick={() => {
+                    if (hasSubMenu) {
+                      toggleMenu(item.id);
+                    } else {
+                      setActiveView(item.id);
+                    }
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors text-sm ${
+                    isActive
+                      ? 'bg-blue-50 text-blue-700 font-medium'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </div>
+                  {hasSubMenu && (
+                    isExpanded ? <ChevronDown className="h-4 w-4 text-gray-400" /> : <ChevronRight className="h-4 w-4 text-gray-400" />
+                  )}
+                </button>
+                
+                {hasSubMenu && isExpanded && item.subMenu && (
+                  <div className="ml-4 mt-1 space-y-1">
+                    {item.subMenu.map((sub) => {
+                      const SubIcon = sub.icon || List;
+                      return (
+                        <button
+                          key={sub.id}
+                          onClick={() => setActiveView(sub.id)}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm ${
+                            activeView === sub.id
+                              ? 'bg-blue-100 text-blue-700 font-medium'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          <SubIcon className="h-4 w-4" />
+                          <span>{sub.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
+        
+        {/* Footer */}
+        <div className="p-3 border-t">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600 truncate">
+              {adminName}
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-gray-500 hover:text-red-600">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Main Content */}
