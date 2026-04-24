@@ -1,0 +1,11 @@
+set ssl:verify-certificate no
+set sftp:auto-confirm yes
+set net:max-retries 3
+set net:timeout 30
+
+open -u cddf56yz6_ssh,Kimi123 sftp://ssh.cddf56yz6.service.one:22
+
+# Mirror dist folder to root
+mirror -R --verbose /root/.openclaw/workspace/HemeSolutions\ New\ website/frontend/dist/ .
+
+bye

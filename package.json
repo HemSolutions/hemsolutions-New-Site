@@ -1,0 +1,9 @@
+{
+  "name": "hemsolutions",
+  "version": "2.0.0",
+  "description": "HemSolutions Sverige AB - Root package for Render deployment",
+  "scripts": {
+    "build": "cd backend && npm install",
+    "start": "cd backend && npm start"
+  }
+}
