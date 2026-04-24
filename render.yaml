@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: hemsolutions-api
+    runtime: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DB_SSL
+        value: true
+      - key: FRONTEND_URL
+        value: https://www.hemsolutions.se
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
