@@ -212,6 +212,7 @@ export function Blog() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [showFeatured, setShowFeatured] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -235,10 +236,17 @@ export function Blog() {
   // Auto-scroll blog posts
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % blogPosts.length);
+      setCurrentIndex((prev) => (prev + 1) % filteredPosts.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeFilter]);
+
+  const filteredPosts = activeFilter
+    ? blogPosts.filter((post) => post.category === activeFilter || post.tags.includes(activeFilter.toLowerCase()))
+    : blogPosts;
+
+  const availableCategories = Array.from(new Set(blogPosts.map((p) => p.category)));
+  const popularTags = ['Städtips', 'RUT-avdrag', 'Hållbarhet', 'Fönsterputs', 'Flyttstädning', 'Organisation'];
 
   return (
     <>
@@ -266,11 +274,11 @@ export function Blog() {
                 Lär dig mer om städning, organisation och hemskötsel från våra experter
               </p>
             </div>
-            <button 
-              onClick={() => { window.scrollTo({ top: document.getElementById('blog')?.offsetTop || 0, behavior: 'smooth' }); }}
+            <button
+              onClick={() => { setActiveFilter(null); window.scrollTo({ top: document.getElementById('blog')?.offsetTop || 0, behavior: 'smooth' }); }}
               className="inline-flex items-center gap-2 text-teal-600 font-semibold hover:text-teal-700 transition-colors"
             >
-              Se alla artiklar
+              {activeFilter ? 'Visa alla' : 'Se alla artiklar'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -310,11 +318,15 @@ export function Blog() {
                 <div className="p-8">
                   <h4 className="font-semibold text-slate-800 mb-4">Populära ämnen</h4>
                   <div className="flex flex-wrap gap-2">
-                    {['Städtips', 'RUT-avdrag', 'Hållbarhet', 'Fönsterputs', 'Flyttstädning', 'Organisation'].map((tag) => (
+                    {popularTags.map((tag) => (
                       <button
                         key={tag}
-                        onClick={(e) => { e.stopPropagation(); }}
-                        className="px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-sm hover:bg-teal-100 hover:text-teal-700 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); setActiveFilter(tag === activeFilter ? null : tag); }}
+                        className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                          activeFilter === tag
+                            ? 'bg-teal-500 text-white'
+                            : 'bg-slate-100 text-slate-700 hover:bg-teal-100 hover:text-teal-700'
+                        }`}
                       >
                         {tag}
                       </button>
@@ -327,7 +339,7 @@ export function Blog() {
 
           {/* Blog Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {blogPosts.map((post, index) => (
+            {filteredPosts.map((post, index) => (
               <article
                 key={post.id}
                 onClick={() => setSelectedPost(post)}
@@ -368,7 +380,7 @@ export function Blog() {
 
           {/* Auto-rotating indicator */}
           <div className="flex justify-center gap-2 mt-8">
-            {blogPosts.map((_, index) => (
+            {filteredPosts.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentIndex(index)}

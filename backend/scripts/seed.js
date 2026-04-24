@@ -63,7 +63,7 @@ async function seed() {
     // Create admin user if not exists
     const adminEmail = process.env.ADMIN_EMAIL || 'info@hemsolutions.se';
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-    
+
     const existingAdmin = await query(
       'SELECT id FROM users WHERE email = $1',
       [adminEmail]
@@ -81,6 +81,52 @@ async function seed() {
       logger.info('Admin user created');
     } else {
       logger.info('Admin user already exists');
+    }
+
+    // Create dummy employee/worker user
+    const dummyEmployeeEmail = 'employee@hemsolutions.se';
+    const dummyEmployeePassword = 'employee123';
+
+    const existingEmployee = await query(
+      'SELECT id FROM users WHERE email = $1',
+      [dummyEmployeeEmail]
+    );
+
+    if (existingEmployee.rows.length === 0) {
+      const salt = await bcrypt.genSalt(12);
+      const passwordHash = await bcrypt.hash(dummyEmployeePassword, salt);
+
+      await query(
+        `INSERT INTO users (email, password_hash, name, phone, address, postcode, city, role)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'worker')`,
+        [dummyEmployeeEmail, passwordHash, 'Anna Städare', '070-123 45 67', 'Storgatan 1', '11122', 'Stockholm']
+      );
+      logger.info('Dummy employee user created');
+    } else {
+      logger.info('Dummy employee user already exists');
+    }
+
+    // Create dummy customer user
+    const dummyCustomerEmail = 'customer@demo.se';
+    const dummyCustomerPassword = 'customer123';
+
+    const existingCustomer = await query(
+      'SELECT id FROM users WHERE email = $1',
+      [dummyCustomerEmail]
+    );
+
+    if (existingCustomer.rows.length === 0) {
+      const salt = await bcrypt.genSalt(12);
+      const passwordHash = await bcrypt.hash(dummyCustomerPassword, salt);
+
+      await query(
+        `INSERT INTO users (email, password_hash, name, phone, address, postcode, city, role)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'customer')`,
+        [dummyCustomerEmail, passwordHash, 'Erik Demo', '070-987 65 43', 'Lillgatan 5', '11133', 'Stockholm']
+      );
+      logger.info('Dummy customer user created');
+    } else {
+      logger.info('Dummy customer user already exists');
     }
 
     // Insert default settings

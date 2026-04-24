@@ -369,10 +369,9 @@ export function LoginPage({ onBack }: LoginPageProps) {
         <div className="mt-6 p-4 bg-slate-100 rounded-xl">
           <p className="text-xs font-medium text-slate-500 mb-2">Demo-inloggningar:</p>
           <div className="space-y-1 text-xs text-slate-600">
-            <p><strong>Kund:</strong> customer@example.com / password123</p>
-            <p><strong>Personal:</strong> worker@example.com / password123</p>
-            <p><strong>Admin:</strong> admin@hemsolutions.se / admin123</p>
-            <p><strong>BankID:</strong> 19850115-1234 (kund)</p>
+            <p><strong>Kund:</strong> customer@demo.se / customer123</p>
+            <p><strong>Personal:</strong> employee@hemsolutions.se / employee123</p>
+            <p><strong>Admin:</strong> info@hemsolutions.se / admin123</p>
           </div>
         </div>
       </div>
