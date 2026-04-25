@@ -5,7 +5,64 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
-// Dashboard stats
+// Dashboard data (for /api/admin/dashboard)
+router.get('/dashboard', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    // Total bookings today
+    const todayBookings = await query(
+      `SELECT COUNT(*) FROM bookings WHERE booking_date = CURRENT_DATE`
+    );
+
+    // Pending bookings
+    const pendingBookings = await query(
+      `SELECT COUNT(*) FROM bookings WHERE status = 'pending'`
+    );
+
+    // Total revenue this month
+    const monthlyRevenue = await query(
+      `SELECT COALESCE(SUM(total_amount), 0) FROM invoices 
+       WHERE status = 'paid' AND EXTRACT(MONTH FROM paid_at) = EXTRACT(MONTH FROM CURRENT_DATE)
+       AND EXTRACT(YEAR FROM paid_at) = EXTRACT(YEAR FROM CURRENT_DATE)`
+    );
+
+    // Active workers
+    const activeWorkers = await query(
+      `SELECT COUNT(*) FROM workers WHERE active = true`
+    );
+
+    // Total customers
+    const totalCustomers = await query(
+      `SELECT COUNT(*) FROM users WHERE role = 'customer'`
+    );
+
+    // Recent bookings
+    const recentBookings = await query(
+      `SELECT b.*, u.name as customer_name
+       FROM bookings b
+       JOIN users u ON u.id = b.customer_id
+       ORDER BY b.created_at DESC
+       LIMIT 5`
+    );
+
+    res.json({
+      stats: {
+        todayBookings: parseInt(todayBookings.rows[0].count),
+        pendingBookings: parseInt(pendingBookings.rows[0].count),
+        monthlyRevenue: parseFloat(monthlyRevenue.rows[0].coalesce),
+        activeWorkers: parseInt(activeWorkers.rows[0].count),
+        totalCustomers: parseInt(totalCustomers.rows[0].count)
+      },
+      recentBookings: recentBookings.rows,
+      upcomingBookings: []
+    });
+  } catch (error) {
+    logger.error('Get dashboard error', { error: error.message });
+    res.status(500).json({ error: 'Failed to get dashboard' });
+  }
+});
+
+// Dashboard stats (duplicate of /dashboard for compatibility)
+router.get('/stats', authenticate, authorize('admin'), async (req, res) => {
 router.get('/stats', authenticate, authorize('admin'), async (req, res) => {
   try {
     // Total bookings today
