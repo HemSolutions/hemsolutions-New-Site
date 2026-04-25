@@ -1,5 +1,6 @@
 import { MapPin, Phone, Mail, Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
-import type { View } from '@/App';
+type View = 'home' | 'booking' | 'dashboard' | 'worker' | 'admin' | 'login' | 'register' | 'allmannavillkor' | 'integritetspolicy' | 'cookiepolicy' | 'tillganglighetsredogorelse' | 'contact';
+
 
 interface FooterProps {
   onLogin: () => void;

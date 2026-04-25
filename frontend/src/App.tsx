@@ -1,3 +1,4 @@
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Navigation } from './sections/Navigation';
 import { Hero } from './sections/Hero';
@@ -11,7 +12,6 @@ import { Footer } from './sections/Footer';
 import { BookingFlow } from './sections/BookingFlow';
 import { CustomerDashboard } from './sections/CustomerDashboard';
 import { WorkerApp } from './sections/WorkerApp';
-import { AdminPanel } from './sections/AdminPanel';
 import { Blog } from './sections/Blog';
 import { AIChatbot } from './sections/AIChatbot';
 import { AIHelp } from './sections/AIHelp';
@@ -27,118 +27,107 @@ import { Integritetspolicy } from './pages/Integritetspolicy';
 import { Cookiepolicy } from './pages/Cookiepolicy';
 import { Tillganglighetsredogorelse } from './pages/Tillganglighetsredogorelse';
 import { ContactPage } from './pages/ContactPage';
+import AdminDashboard from './pages/AdminDashboard';
 
-export type View = 'home' | 'booking' | 'dashboard' | 'worker' | 'admin' | 'login' | 'register' | 'allmannavillkor' | 'integritetspolicy' | 'cookiepolicy' | 'tillganglighetsredogorelse' | 'contact';
-
-function AppContent() {
-  const [currentView, setCurrentView] = useState<View>('home');
+function HomePage() {
   const [scrolled, setScrolled] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-
+    const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Redirect authenticated users to their dashboard
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      if (currentView === 'login' || currentView === 'register') {
-        if (user.role === 'admin') setCurrentView('admin');
-        else if (user.role === 'worker') setCurrentView('worker');
-        else setCurrentView('dashboard');
-      }
-    }
-  }, [isAuthenticated, user, currentView]);
-
-  const handleBookNow = () => {
-    setCurrentView('booking');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleLogin = () => {
-    setCurrentView('login');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const renderView = () => {
-    switch (currentView) {
-      case 'booking':
-        return <BookingFlow onBack={() => setCurrentView('home')} />;
-      case 'dashboard':
-        return <CustomerDashboard onBack={() => setCurrentView('home')} />;
-      case 'worker':
-        return <WorkerApp onBack={() => setCurrentView('home')} />;
-      case 'admin':
-        return <AdminPanel onBack={() => setCurrentView('home')} />;
-      case 'login':
-        return <LoginPage onBack={() => setCurrentView('home')} />;
-      case 'register':
-        return <RegisterPage onBack={() => setCurrentView('home')} />;
-      case 'allmannavillkor':
-        return <AllmannaVillkor />;
-      case 'integritetspolicy':
-        return <Integritetspolicy />;
-      case 'cookiepolicy':
-        return <Cookiepolicy />;
-      case 'tillganglighetsredogorelse':
-        return <Tillganglighetsredogorelse />;
-      case 'contact':
-        return <ContactPage />;
-      default:
-        return (
-          <>
-            <Hero onBookNow={handleBookNow} />
-            <PromotionalOffers onBookNow={handleBookNow} />
-            <Services onBookNow={handleBookNow} />
-            <TrustFeatures />
-            <AIHelp onBookNow={handleBookNow} />
-            <About />
-            <MobileApp />
-            <Testimonials />
-            <Blog />
-            <FAQ />
-            <Careers />
-            <Footer 
-              onLogin={handleLogin} 
-              onWorkerLogin={handleLogin}
-              onAdminLogin={handleLogin}
-              onNavigate={setCurrentView}
-            />
-            <AIChatbot onBookNow={handleBookNow} />
-            <CookieConsent />
-          </>
-        );
-    }
-  };
+  const handleBookNow = () => navigate('/booking');
+  const handleLogin = () => navigate('/login');
 
   return (
-    <div className="min-h-screen bg-background">
-      {currentView === 'home' || currentView === 'contact' ? (
-        <Navigation 
-          scrolled={scrolled} 
-          onNavigate={setCurrentView}
-          currentView={currentView}
-        />
-      ) : null}
+    <>
+      <Navigation scrolled={scrolled} onNavigate={(view: any) => {
+        if (view === 'login') navigate('/login');
+        else if (view === 'booking') navigate('/booking');
+        else if (view === 'contact') navigate('/contact');
+        else if (view === 'allmannavillkor') navigate('/allmanna-villkor');
+        else if (view === 'integritetspolicy') navigate('/integritetspolicy');
+        else if (view === 'cookiepolicy') navigate('/cookiepolicy');
+        else if (view === 'tillganglighetsredogorelse') navigate('/tillganglighetsredogorelse');
+        else navigate('/');
+      }} currentView="home" />
       <main>
-        {renderView()}
+        <Hero onBookNow={handleBookNow} />
+        <PromotionalOffers onBookNow={handleBookNow} />
+        <Services onBookNow={handleBookNow} />
+        <TrustFeatures />
+        <AIHelp onBookNow={handleBookNow} />
+        <About />
+        <MobileApp />
+        <Testimonials />
+        <Blog />
+        <FAQ />
+        <Careers />
+        <Footer 
+          onLogin={handleLogin} 
+          onWorkerLogin={handleLogin}
+          onAdminLogin={handleLogin}
+          onNavigate={(view: any) => {
+            if (view === 'login') navigate('/login');
+            else if (view === 'contact') navigate('/contact');
+          }}
+        />
+        <AIChatbot onBookNow={handleBookNow} />
+        <CookieConsent />
       </main>
-    </div>
+    </>
+  );
+}
+
+function AuthRedirect() {
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'admin') navigate('/admin');
+      else if (user.role === 'worker') navigate('/worker');
+      else navigate('/dashboard');
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  return null;
+}
+
+function AppContent() {
+  const { logout } = useAuth();
+
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/booking" element={<BookingFlow onBack={() => window.location.href = '/'} />} />
+      <Route path="/dashboard" element={<CustomerDashboard onBack={() => window.location.href = '/'} />} />
+      <Route path="/worker" element={<WorkerApp onBack={() => window.location.href = '/'} />} />
+      <Route path="/login" element={<><AuthRedirect /><LoginPage onBack={() => window.location.href = '/'} /></>} />
+      <Route path="/register" element={<RegisterPage onBack={() => window.location.href = '/'} />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/allmanna-villkor" element={<AllmannaVillkor />} />
+      <Route path="/integritetspolicy" element={<Integritetspolicy />} />
+      <Route path="/cookiepolicy" element={<Cookiepolicy />} />
+      <Route path="/tillganglighetsredogorelse" element={<Tillganglighetsredogorelse />} />
+      <Route path="/admin/*" element={<AdminDashboard onLogout={() => { logout(); window.location.href = '/'; }} />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
 function App() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </LanguageProvider>
+    <BrowserRouter>
+      <LanguageProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </LanguageProvider>
+    </BrowserRouter>
   );
 }
 

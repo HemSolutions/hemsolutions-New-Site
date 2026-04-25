@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { View } from '@/App';
+type View = 'home' | 'booking' | 'dashboard' | 'worker' | 'admin' | 'login' | 'register' | 'allmannavillkor' | 'integritetspolicy' | 'cookiepolicy' | 'tillganglighetsredogorelse' | 'contact';
 
 interface NavigationProps {
   scrolled: boolean;

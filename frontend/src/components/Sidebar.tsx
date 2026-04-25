@@ -1,17 +1,13 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
-  Calendar,
   LayoutDashboard,
   FileText,
   Receipt,
   Users,
   Package,
-  UsersRound,
-  MessageSquare,
-  AlertTriangle,
-  CreditCard,
-  Bell,
+  Wallet,
+  AlertCircle,
   BarChart3,
   Settings,
   LogOut,
@@ -20,9 +16,9 @@ import {
   ChevronDown,
   ChevronRight,
   Home,
-  FileBarChart,
-  Wallet,
-  AlertCircle,
+  Search,
+  Plus,
+  ClipboardList,
 } from 'lucide-react'
 import { Button } from './ui/button'
 import { cn } from '../lib/utils'
@@ -42,37 +38,53 @@ const menuItems: MenuItem[] = [
   { path: '/admin', icon: LayoutDashboard, label: 'Översikt' },
   {
     icon: FileText,
-    label: 'Fakturering',
+    label: 'Faktura',
     children: [
-      { path: '/admin/invoices', label: 'Fakturor', icon: FileText },
-      { path: '/admin/receipts', label: 'Kvitton', icon: Receipt },
-      { path: '/admin/payments', label: 'Betalningar', icon: Wallet },
-      { path: '/admin/reminders', label: 'Påminnelser', icon: AlertCircle },
+      { path: '/admin/invoices/new', label: 'Skapa ny', icon: Plus },
+      { path: '/admin/invoices/new-rot', label: 'Skapa ny ROT', icon: Plus },
+      { path: '/admin/invoices/new-rut', label: 'Skapa ny RUT', icon: Plus },
+      { path: '/admin/invoices', label: 'Sök', icon: Search },
+      { path: '/admin/invoices/apply-rot', label: 'Ansök ROT', icon: ClipboardList },
+      { path: '/admin/invoices/apply-rut', label: 'Ansök RUT', icon: ClipboardList },
     ],
   },
-  { path: '/admin/customers', icon: Users, label: 'Kunder' },
-  { path: '/admin/articles', icon: Package, label: 'Artiklar' },
-  { path: '/admin/calendar', icon: Calendar, label: 'Schema' },
-  { path: '/admin/workers', icon: UsersRound, label: 'Medarbetare' },
-  { path: '/admin/messages', icon: MessageSquare, label: 'Meddelanden' },
-  { path: '/admin/reklamation', icon: AlertTriangle, label: 'Reklamationer' },
+  { path: '/admin/receipts', icon: Receipt, label: 'Kvitto' },
   {
-    icon: BarChart3,
-    label: 'Rapporter',
+    icon: Users,
+    label: 'Kund',
     children: [
-      { path: '/admin/reports', label: 'Alla rapporter', icon: FileBarChart },
-      { path: '/admin/reports/month', label: 'Månadsrapport', icon: BarChart3 },
-      { path: '/admin/reports/customer', label: 'Kundrapport', icon: Users },
+      { path: '/admin/customers/new', label: 'Skapa ny', icon: Plus },
+      { path: '/admin/customers', label: 'Sök', icon: Search },
     ],
   },
+  { path: '/admin/articles', icon: Package, label: 'Artikel' },
+  {
+    icon: Wallet,
+    label: 'Betalning',
+    children: [
+      { path: '/admin/payments/new', label: 'Inbetaling', icon: Plus },
+      { path: '/admin/payments', label: 'Sök', icon: Search },
+    ],
+  },
+  {
+    icon: AlertCircle,
+    label: 'Påminnelse',
+    children: [
+      { path: '/admin/reminders/new', label: 'Skapa ny', icon: Plus },
+      { path: '/admin/reminders', label: 'Sök', icon: Search },
+    ],
+  },
+  { path: '/admin/reports', icon: BarChart3, label: 'Rapporter' },
   { path: '/admin/settings', icon: Settings, label: 'Inställningar' },
 ]
 
 export default function Sidebar({ onLogout }: SidebarProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
-    'Fakturering': true,
-    'Rapporter': false,
+    'Faktura': true,
+    'Kund': false,
+    'Betalning': false,
+    'Påminnelse': false,
   })
   const location = useLocation()
 
@@ -85,10 +97,15 @@ export default function Sidebar({ onLogout }: SidebarProps) {
 
   const isMenuActive = (item: MenuItem) => {
     if (item.path && location.pathname === item.path) return true
+    if (item.path === '/admin' && location.pathname === '/admin') return true
     if (item.children) {
-      return item.children.some(child => location.pathname.startsWith(child.path))
+      return item.children.some(child => location.pathname === child.path || location.pathname.startsWith(child.path + '/'))
     }
     return false
+  }
+
+  const isChildActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/')
   }
 
   return (
@@ -162,7 +179,6 @@ export default function Sidebar({ onLogout }: SidebarProps) {
             {menuItems.map((item) => (
               <div key={item.label}>
                 {item.children ? (
-                  // Accordion menu with children
                   <div>
                     <button
                       onClick={() => toggleMenu(item.label)}
@@ -192,10 +208,10 @@ export default function Sidebar({ onLogout }: SidebarProps) {
                             key={child.path}
                             to={child.path}
                             onClick={() => setSidebarOpen(false)}
-                            className={({ isActive }) =>
+                            className={() =>
                               cn(
                                 'flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm',
-                                isActive
+                                isChildActive(child.path)
                                   ? 'bg-blue-600 text-white'
                                   : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                               )
@@ -209,7 +225,6 @@ export default function Sidebar({ onLogout }: SidebarProps) {
                     )}
                   </div>
                 ) : (
-                  // Single menu item
                   <NavLink
                     to={item.path!}
                     onClick={() => setSidebarOpen(false)}
