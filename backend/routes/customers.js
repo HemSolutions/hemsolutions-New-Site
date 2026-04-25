@@ -154,4 +154,68 @@ router.get('/:id', authenticate, authorize('admin', 'worker'), async (req, res) 
   }
 });
 
+
+// Update customer
+router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const allowedFields = ['name', 'email', 'phone', 'address', 'postcode', 'city', 
+                           'customer_type', 'rut_rot', 'payment_terms', 'discount', 
+                           'customer_number', 'our_contact', 'customer_contact', 
+                           'website', 'personnummer', 'notes', 'org_number', 'active'];
+    
+    const setClause = [];
+    const values = [];
+    let paramCount = 0;
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (allowedFields.includes(key)) {
+        setClause.push(`${key} = $${++paramCount}`);
+        values.push(value);
+      }
+    }
+
+    if (setClause.length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    values.push(id);
+    const result = await query(
+      `UPDATE users SET ${setClause.join(', ')} WHERE id = $${++paramCount} AND role = 'customer' RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    res.json({ customer: result.rows[0] });
+  } catch (error) {
+    logger.error('Update customer error', { error: error.message });
+    res.status(500).json({ error: 'Failed to update customer' });
+  }
+});
+
+// Delete customer
+router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await query('DELETE FROM customers WHERE user_id = $1', [id]);
+    const result = await query('DELETE FROM users WHERE id = $1 AND role = $2 RETURNING id', [id, 'customer']);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    res.json({ message: 'Customer deleted successfully' });
+  } catch (error) {
+    logger.error('Delete customer error', { error: error.message });
+    res.status(500).json({ error: 'Failed to delete customer' });
+  }
+});
+
 module.exports = router;
+

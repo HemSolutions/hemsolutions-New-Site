@@ -90,4 +90,60 @@ router.get('/:id/bookings', authenticate, authorize('admin', 'worker'), async (r
   }
 });
 
+
+// Update worker
+router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { specialization, status, bio, hourly_rate } = req.body;
+    
+    const setClause = [];
+    const values = [];
+    let paramCount = 0;
+
+    if (specialization !== undefined) { setClause.push(`specialization = $${++paramCount}`); values.push(specialization); }
+    if (status !== undefined) { setClause.push(`status = $${++paramCount}`); values.push(status); }
+    if (bio !== undefined) { setClause.push(`bio = $${++paramCount}`); values.push(bio); }
+    if (hourly_rate !== undefined) { setClause.push(`hourly_rate = $${++paramCount}`); values.push(hourly_rate); }
+
+    if (setClause.length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    values.push(id);
+    const result = await query(
+      `UPDATE workers SET ${setClause.join(', ')} WHERE id = $${++paramCount} RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Worker not found' });
+    }
+
+    res.json({ worker: result.rows[0] });
+  } catch (error) {
+    logger.error('Update worker error', { error: error.message });
+    res.status(500).json({ error: 'Failed to update worker' });
+  }
+});
+
+// Delete worker
+router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await query('DELETE FROM workers WHERE id = $1 RETURNING id', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Worker not found' });
+    }
+
+    res.json({ message: 'Worker deleted successfully' });
+  } catch (error) {
+    logger.error('Delete worker error', { error: error.message });
+    res.status(500).json({ error: 'Failed to delete worker' });
+  }
+});
+
 module.exports = router;
+

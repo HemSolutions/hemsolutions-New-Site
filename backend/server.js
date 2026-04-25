@@ -25,6 +25,7 @@ const paymentRoutes = require('./routes/payments');
 const customerRoutes = require('./routes/customers');
 const contactRoutes = require('./routes/contact');
 const serviceRoutes = require('./routes/services');
+const reminderRoutes = require('./routes/reminders');
 
 // Import cron jobs
 require('./cron/reminders');
@@ -116,6 +117,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/reminders', reminderRoutes);
 
 // Root API info
 app.get('/api', (req, res) => {

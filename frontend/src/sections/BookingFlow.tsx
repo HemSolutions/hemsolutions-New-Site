@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { bookings as bookingsApi } from '@/api/api';
+import { createBooking } from '@/api';
 
 interface BookingFlowProps {
   onBack: () => void;
@@ -179,7 +179,7 @@ export function BookingFlow({ onBack }: BookingFlowProps) {
         setBookingError('');
         
         try {
-          const result = await bookingsApi.create({
+          const result = await createBooking({
             service_type: selectedServiceData?.title || 'Hemstädning',
             booking_date: date ? format(date, 'yyyy-MM-dd') : '',
             time_slot: timeSlots.find(t => t.id === timeSlot)?.time || '',

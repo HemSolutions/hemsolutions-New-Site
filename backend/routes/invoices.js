@@ -317,4 +317,71 @@ router.post('/:id/rut', authenticate, authorize('admin'), async (req, res) => {
   }
 });
 
+
+// Update invoice
+router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, notes, reference } = req.body;
+    
+    const setClause = [];
+    const values = [];
+    let paramCount = 0;
+
+    if (status !== undefined) {
+      setClause.push(`status = $${++paramCount}`);
+      values.push(status);
+    }
+    if (notes !== undefined) {
+      setClause.push(`notes = $${++paramCount}`);
+      values.push(notes);
+    }
+    if (reference !== undefined) {
+      setClause.push(`reference = $${++paramCount}`);
+      values.push(reference);
+    }
+
+    if (setClause.length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    values.push(id);
+    const result = await query(
+      `UPDATE invoices SET ${setClause.join(', ')} WHERE id = $${++paramCount} RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    res.json({ invoice: result.rows[0] });
+  } catch (error) {
+    logger.error('Update invoice error', { error: error.message });
+    res.status(500).json({ error: 'Failed to update invoice' });
+  }
+});
+
+// Delete invoice
+router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Delete line items first
+    await query('DELETE FROM invoice_items WHERE invoice_id = $1', [id]);
+    // Delete invoice
+    const result = await query('DELETE FROM invoices WHERE id = $1 RETURNING id', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    res.json({ message: 'Invoice deleted successfully' });
+  } catch (error) {
+    logger.error('Delete invoice error', { error: error.message });
+    res.status(500).json({ error: 'Failed to delete invoice' });
+  }
+});
+
 module.exports = router;
+
