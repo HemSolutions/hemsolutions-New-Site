@@ -42,11 +42,15 @@ export function LoginPage({ onBack }: LoginPageProps) {
     setLoginError('');
     setIsLoading(true);
     
-    const success = await login(email, password);
-    if (success) {
-      // Navigation handled by the redirect above
-    } else {
-      setLoginError('Felaktig e-post eller lösenord. Försök igen.');
+    try {
+      const success = await login(email, password);
+      if (!success) {
+        setLoginError('Felaktig e-post eller lösenord. Försök igen.');
+      }
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      const message = error.response?.data?.message || error.message || 'Kunde inte ansluta till servern. Försök igen.';
+      setLoginError(`Inloggning misslyckades: ${message}`);
     }
     setIsLoading(false);
   };

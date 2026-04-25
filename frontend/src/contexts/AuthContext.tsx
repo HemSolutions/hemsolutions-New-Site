@@ -79,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
       const data = await authApi.login(email, password);
+      console.log('Login response:', data);
 
       if (data.success && data.user) {
         const user: User = {
@@ -103,9 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      return false;
+      // Re-throw the error so the UI can show the actual message
+      throw error;
     }
   }, []);
 
