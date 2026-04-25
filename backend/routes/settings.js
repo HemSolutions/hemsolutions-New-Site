@@ -43,11 +43,12 @@ router.put('/:key', authenticate, authorize('admin'), async (req, res) => {
     let result;
     if (existing.rows.length > 0) {
       // Update existing
-      result = await query(
+      await query(
         `UPDATE settings SET value = $1, description = COALESCE($2, description), updated_at = CURRENT_TIMESTAMP
-         WHERE key = $3 RETURNING *`,
+         WHERE key = $3`,
         [value, description, key]
       );
+      result = await query('SELECT * FROM settings WHERE key = $1', [key]);
     } else {
       // Insert new
       result = await query(

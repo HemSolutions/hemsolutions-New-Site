@@ -10,29 +10,29 @@ router.get('/dashboard', authenticate, authorize('admin'), async (req, res) => {
   try {
     // Total bookings today
     const todayBookings = await query(
-      `SELECT COUNT(*) FROM bookings WHERE booking_date = CURRENT_DATE`
+      `SELECT COUNT(*) as count FROM bookings WHERE booking_date = date('now')`
     );
 
     // Pending bookings
     const pendingBookings = await query(
-      `SELECT COUNT(*) FROM bookings WHERE status = 'pending'`
+      `SELECT COUNT(*) as count FROM bookings WHERE status = 'pending'`
     );
 
     // Total revenue this month
     const monthlyRevenue = await query(
-      `SELECT COALESCE(SUM(total_amount), 0) FROM invoices 
-       WHERE status = 'paid' AND EXTRACT(MONTH FROM paid_at) = EXTRACT(MONTH FROM CURRENT_DATE)
-       AND EXTRACT(YEAR FROM paid_at) = EXTRACT(YEAR FROM CURRENT_DATE)`
+      `SELECT ifnull(SUM(total_amount), 0) as revenue FROM invoices 
+       WHERE status = 'paid' AND strftime('%m', paid_at) = strftime('%m', 'now')
+       AND strftime('%Y', paid_at) = strftime('%Y', 'now')`
     );
 
     // Active workers
     const activeWorkers = await query(
-      `SELECT COUNT(*) FROM workers WHERE active = true`
+      `SELECT COUNT(*) as count FROM workers WHERE active = 1`
     );
 
     // Total customers
     const totalCustomers = await query(
-      `SELECT COUNT(*) FROM users WHERE role = 'customer'`
+      `SELECT COUNT(*) as count FROM users WHERE role = 'customer'`
     );
 
     // Recent bookings
@@ -48,7 +48,7 @@ router.get('/dashboard', authenticate, authorize('admin'), async (req, res) => {
       stats: {
         todayBookings: parseInt(todayBookings.rows[0].count),
         pendingBookings: parseInt(pendingBookings.rows[0].count),
-        monthlyRevenue: parseFloat(monthlyRevenue.rows[0].coalesce),
+        monthlyRevenue: parseFloat(monthlyRevenue.rows[0].revenue),
         activeWorkers: parseInt(activeWorkers.rows[0].count),
         totalCustomers: parseInt(totalCustomers.rows[0].count)
       },

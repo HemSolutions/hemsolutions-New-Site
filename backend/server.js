@@ -173,7 +173,10 @@ async function initDatabase() {
   try {
     logger.info('Initializing database...');
     
-    // Create users table
+    // Drop and recreate users table with full schema (safe for demo - re-seeded below)
+    try { await query(`DROP TABLE IF EXISTS workers`); } catch(e) {}
+    try { await query(`DROP TABLE IF EXISTS users`); } catch(e) {}
+    
     await query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -194,22 +197,14 @@ async function initDatabase() {
         rut_rot BOOLEAN DEFAULT FALSE,
         discount DECIMAL(5,2) DEFAULT 0,
         payment_terms INTEGER DEFAULT 30,
+        our_contact VARCHAR(255),
+        customer_contact VARCHAR(255),
+        website VARCHAR(255),
+        notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    
-    // Add missing columns to users table (if upgrading)
-    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS customer_type VARCHAR(50)`); } catch(e) {}
-    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS customer_number VARCHAR(100)`); } catch(e) {}
-    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS org_number VARCHAR(50)`); } catch(e) {}
-    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS rut_rot BOOLEAN DEFAULT FALSE`); } catch(e) {}
-    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discount DECIMAL(5,2) DEFAULT 0`); } catch(e) {}
-    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_terms INTEGER DEFAULT 30`); } catch(e) {}
-    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS notes TEXT`); } catch(e) {}
-    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS our_contact VARCHAR(255)`); } catch(e) {}
-    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS customer_contact VARCHAR(255)`); } catch(e) {}
-    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS website VARCHAR(255)`); } catch(e) {}
     
     // Create workers table
     await query(`
@@ -261,11 +256,9 @@ async function initDatabase() {
       )
     `);
     
-    // Create invoices table - drop and recreate if schema changed (safe for fresh deploys)
-    try {
-      await query(`DROP TABLE IF EXISTS invoice_line_items`);
-      await query(`DROP TABLE IF EXISTS invoices`);
-    } catch(e) {}
+    // Drop and recreate invoices table with full schema
+    try { await query(`DROP TABLE IF EXISTS invoice_line_items`); } catch(e) {}
+    try { await query(`DROP TABLE IF EXISTS invoices`); } catch(e) {}
     
     await query(`
       CREATE TABLE IF NOT EXISTS invoices (
@@ -289,7 +282,8 @@ async function initDatabase() {
         rut_amount DECIMAL(10,2) DEFAULT 0,
         remaining_amount DECIMAL(10,2),
         our_contact VARCHAR(255),
-        customer_contact VARCHAR(255)
+        customer_contact VARCHAR(255),
+        notes TEXT
       )
     `);
 
@@ -308,19 +302,6 @@ async function initDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-        id SERIAL PRIMARY KEY,
-        invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
-        description TEXT NOT NULL,
-        quantity DECIMAL(10,2) NOT NULL,
-        unit VARCHAR(50),
-        price DECIMAL(10,2) NOT NULL,
-        discount DECIMAL(5,2) DEFAULT 0,
-        vat DECIMAL(5,2) DEFAULT 25,
-        total DECIMAL(10,2) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    
     // Create payments table
     await query(`
       CREATE TABLE IF NOT EXISTS payments (

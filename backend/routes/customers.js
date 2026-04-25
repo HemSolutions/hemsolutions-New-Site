@@ -86,13 +86,11 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
 
     const result = await query(
       `INSERT INTO users (email, password_hash, name, phone, address, postcode, city, 
-         role, customer_type, rut_rot, payment_terms, discount, customer_number, 
-         org_number)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'customer', $8, $9, $10, $11, $12, $13)
+         role, customer_type, rut_rot, payment_terms, discount, customer_number)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'customer', $8, $9, $10, $11, $12)
        RETURNING id, name, email, phone, address, postcode, city, customer_type, created_at`,
       [email, passwordHash, name, phone, address || '', postcode || '', city || '', 
-       customer_type, rut_rot ? 1 : 0, payment_terms || 30, discount || 0, customer_number || null,
-       org_number || null]
+       customer_type, rut_rot ? 1 : 0, payment_terms || 30, discount || 0, customer_number || null]
     );
 
     const customer = result.rows[0];

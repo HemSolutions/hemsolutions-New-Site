@@ -134,7 +134,9 @@ async function query(text, params = []) {
       .replace(/COALESCE\(/g, 'ifnull(')
       .replace(/ON CONFLICT/g, '')
       .replace(/DO UPDATE SET/g, '')
-      .replace(/DO NOTHING/g, '');
+      .replace(/DO NOTHING/g, '')
+      .replace(/= true/g, '= 1')
+      .replace(/= false/g, '= 0');
   } else {
     // DDL conversions
     sqliteText = sqliteText
