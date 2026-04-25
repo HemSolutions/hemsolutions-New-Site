@@ -93,11 +93,13 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
     }
     const invoiceNumber = nextNum.toString();
     
-    // Update next invoice number
-    await query(
-      "INSERT INTO settings (key, value) VALUES ('next_invoice_number', $1) ON CONFLICT(key) DO UPDATE SET value = $1",
-      [(nextNum + 1).toString()]
-    );
+    // Update next invoice number (manual upsert for SQLite compatibility)
+    const existingNum = await query("SELECT value FROM settings WHERE key = 'next_invoice_number'");
+    if (existingNum.rows.length > 0) {
+      await query("UPDATE settings SET value = $1 WHERE key = 'next_invoice_number'", [(nextNum + 1).toString()]);
+    } else {
+      await query("INSERT INTO settings (key, value) VALUES ('next_invoice_number', $1)", [(nextNum + 1).toString()]);
+    }
 
     const totalAmount = totals?.total || line_items.reduce((sum, item) => sum + (item.total || 0), 0);
     const netAmount = totals?.netTotal || line_items.reduce((sum, item) => {
@@ -106,13 +108,13 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
     }, 0);
     const rutAmount = is_rut ? netAmount * 0.5 : 0;
 
-    // Create invoice
+    // Create invoice - booking_id is NULL for standalone invoices
     const result = await query(
-      `INSERT INTO invoices (customer_id, invoice_number, invoice_date, amount, tax_amount, total_amount, 
+      `INSERT INTO invoices (booking_id, customer_id, invoice_number, invoice_date, amount, tax_amount, total_amount, 
         due_date, status, our_contact, customer_contact, is_rut, rut_amount, notes, remaining_amount)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
        RETURNING *`,
-      [customer_id, invoiceNumber, invoice_date, netAmount, totalAmount - netAmount, totalAmount,
+      [null, customer_id, invoiceNumber, invoice_date, netAmount, totalAmount - netAmount, totalAmount,
        due_date, 'sent', our_contact, customer_contact, is_rut ? 1 : 0, rutAmount, notes, totalAmount]
     );
 

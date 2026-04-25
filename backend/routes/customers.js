@@ -87,12 +87,12 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
     const result = await query(
       `INSERT INTO users (email, password_hash, name, phone, address, postcode, city, 
          role, customer_type, rut_rot, payment_terms, discount, customer_number, 
-         our_contact, customer_contact, website, personnummer, notes, org_number)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'customer', $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+         org_number)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'customer', $8, $9, $10, $11, $12, $13)
        RETURNING id, name, email, phone, address, postcode, city, customer_type, created_at`,
-      [email, passwordHash, name, phone, address, postcode, city, 
-       customer_type, rut_rot ? 1 : 0, payment_terms, discount, customer_number,
-       our_contact, customer_contact, website, personal_number, notes, org_number]
+      [email, passwordHash, name, phone, address || '', postcode || '', city || '', 
+       customer_type, rut_rot ? 1 : 0, payment_terms || 30, discount || 0, customer_number || null,
+       org_number || null]
     );
 
     const customer = result.rows[0];
@@ -103,11 +103,11 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
       tempPassword // Admin should share this with customer
     });
   } catch (error) {
-    logger.error('Create customer error', { error: error.message });
+    logger.error('Create customer error', { error: error.message, stack: error.stack });
     if (error.message.includes('UNIQUE constraint') || error.message.includes('duplicate')) {
       return res.status(409).json({ error: 'Email already exists' });
     }
-    res.status(500).json({ error: 'Failed to create customer' });
+    res.status(500).json({ error: 'Failed to create customer', message: error.message });
   }
 });
 

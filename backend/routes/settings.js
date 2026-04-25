@@ -37,13 +37,25 @@ router.put('/:key', authenticate, authorize('admin'), async (req, res) => {
     const { key } = req.params;
     const { value, description } = req.body;
 
-    const result = await query(
-      `INSERT INTO settings (key, value, description, updated_at)
-       VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
-       ON CONFLICT(key) DO UPDATE SET value = $2, description = COALESCE($3, settings.description), updated_at = CURRENT_TIMESTAMP
-       RETURNING *`,
-      [key, value, description]
-    );
+    // Check if setting exists
+    const existing = await query('SELECT * FROM settings WHERE key = $1', [key]);
+
+    let result;
+    if (existing.rows.length > 0) {
+      // Update existing
+      result = await query(
+        `UPDATE settings SET value = $1, description = COALESCE($2, description), updated_at = CURRENT_TIMESTAMP
+         WHERE key = $3 RETURNING *`,
+        [value, description, key]
+      );
+    } else {
+      // Insert new
+      result = await query(
+        `INSERT INTO settings (key, value, description, updated_at)
+         VALUES ($1, $2, $3, CURRENT_TIMESTAMP) RETURNING *`,
+        [key, value, description]
+      );
+    }
 
     res.json({ setting: result.rows[0] });
   } catch (error) {

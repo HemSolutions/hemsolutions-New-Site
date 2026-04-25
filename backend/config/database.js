@@ -4,7 +4,7 @@ const path = require('path');
 const logger = require('../utils/logger');
 
 // Check if PostgreSQL is configured
-const usePostgres = process.env.DATABASE_URL && !process.env.USE_SQLITE;
+const usePostgres = process.env.DATABASE_URL && process.env.USE_SQLITE !== 'true';
 
 let pool;
 let sqliteDb;
@@ -18,7 +18,7 @@ if (usePostgres) {
     } : false,
     max: 20,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 10000,
   };
 
   pool = new Pool(config);

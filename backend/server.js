@@ -207,6 +207,9 @@ async function initDatabase() {
     try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discount DECIMAL(5,2) DEFAULT 0`); } catch(e) {}
     try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_terms INTEGER DEFAULT 30`); } catch(e) {}
     try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS notes TEXT`); } catch(e) {}
+    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS our_contact VARCHAR(255)`); } catch(e) {}
+    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS customer_contact VARCHAR(255)`); } catch(e) {}
+    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS website VARCHAR(255)`); } catch(e) {}
     
     // Create workers table
     await query(`
@@ -258,7 +261,12 @@ async function initDatabase() {
       )
     `);
     
-    // Create invoices table
+    // Create invoices table - drop and recreate if schema changed (safe for fresh deploys)
+    try {
+      await query(`DROP TABLE IF EXISTS invoice_line_items`);
+      await query(`DROP TABLE IF EXISTS invoices`);
+    } catch(e) {}
+    
     await query(`
       CREATE TABLE IF NOT EXISTS invoices (
         id SERIAL PRIMARY KEY,
@@ -288,6 +296,18 @@ async function initDatabase() {
     // Create invoice line items table
     await query(`
       CREATE TABLE IF NOT EXISTS invoice_line_items (
+        id SERIAL PRIMARY KEY,
+        invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+        description TEXT NOT NULL,
+        quantity DECIMAL(10,2) NOT NULL,
+        unit VARCHAR(50),
+        price DECIMAL(10,2) NOT NULL,
+        discount DECIMAL(5,2) DEFAULT 0,
+        vat DECIMAL(5,2) DEFAULT 25,
+        total DECIMAL(10,2) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
         id SERIAL PRIMARY KEY,
         invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
         description TEXT NOT NULL,
