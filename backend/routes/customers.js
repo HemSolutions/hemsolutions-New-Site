@@ -97,12 +97,6 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
 
     const customer = result.rows[0];
 
-    // Create customer profile
-    await query(
-      'INSERT INTO customers (user_id, preferred_contact, notes) VALUES ($1, $2, $3)',
-      [customer.id, 'email', notes]
-    );
-
     res.status(201).json({
       message: 'Customer created',
       customer,

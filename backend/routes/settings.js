@@ -11,8 +11,8 @@ router.get('/', authenticate, async (req, res) => {
     const result = await query('SELECT * FROM settings ORDER BY key');
     res.json({ settings: result.rows });
   } catch (error) {
-    logger.error('Get settings error', { error: error.message });
-    res.status(500).json({ error: 'Failed to get settings' });
+    logger.error('Get settings error', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Failed to get settings', message: error.message });
   }
 });
 
@@ -47,8 +47,8 @@ router.put('/:key', authenticate, authorize('admin'), async (req, res) => {
 
     res.json({ setting: result.rows[0] });
   } catch (error) {
-    logger.error('Update setting error', { error: error.message });
-    res.status(500).json({ error: 'Failed to update setting' });
+    logger.error('Update setting error', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Failed to update setting', message: error.message });
   }
 });
 

@@ -262,7 +262,7 @@ async function initDatabase() {
     await query(`
       CREATE TABLE IF NOT EXISTS invoices (
         id SERIAL PRIMARY KEY,
-        booking_id INTEGER NOT NULL REFERENCES bookings(id),
+        booking_id INTEGER REFERENCES bookings(id),
         customer_id INTEGER REFERENCES users(id),
         invoice_number VARCHAR(100) UNIQUE,
         amount DECIMAL(10,2) NOT NULL,
@@ -275,6 +275,28 @@ async function initDatabase() {
         swish_payment_reference VARCHAR(255),
         sent_at TIMESTAMP,
         paid_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        invoice_date DATE,
+        is_rut BOOLEAN DEFAULT FALSE,
+        rut_amount DECIMAL(10,2) DEFAULT 0,
+        remaining_amount DECIMAL(10,2),
+        our_contact VARCHAR(255),
+        customer_contact VARCHAR(255)
+      )
+    `);
+
+    // Create invoice line items table
+    await query(`
+      CREATE TABLE IF NOT EXISTS invoice_line_items (
+        id SERIAL PRIMARY KEY,
+        invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+        description TEXT NOT NULL,
+        quantity DECIMAL(10,2) NOT NULL,
+        unit VARCHAR(50),
+        price DECIMAL(10,2) NOT NULL,
+        discount DECIMAL(5,2) DEFAULT 0,
+        vat DECIMAL(5,2) DEFAULT 25,
+        total DECIMAL(10,2) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);

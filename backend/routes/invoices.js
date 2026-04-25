@@ -119,12 +119,14 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
     const invoice = result.rows[0];
 
     // Create line items
-    for (const item of line_items) {
-      await query(
-        `INSERT INTO invoice_line_items (invoice_id, description, quantity, unit, price, discount, vat, total)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [invoice.id, item.description, item.quantity, item.unit, item.price, item.discount, item.vat, item.total]
-      );
+    if (line_items && line_items.length > 0) {
+      for (const item of line_items) {
+        await query(
+          `INSERT INTO invoice_line_items (invoice_id, description, quantity, unit, price, discount, vat, total)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [invoice.id, item.description, item.quantity, item.unit, item.price, item.discount || 0, item.vat || 25, item.total]
+        );
+      }
     }
 
     // Send notification
