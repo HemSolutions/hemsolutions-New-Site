@@ -48,8 +48,8 @@ router.get('/', authenticate, authorize('admin', 'worker'), async (req, res) => 
       }
     });
   } catch (error) {
-    logger.error('Get customers error', { error: error.message });
-    res.status(500).json({ error: 'Failed to get customers' });
+    logger.error('Get customers error', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Failed to get customers', message: error.message });
   }
 });
 
