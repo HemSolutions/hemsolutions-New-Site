@@ -63,7 +63,6 @@ router.get('/dashboard', authenticate, authorize('admin'), async (req, res) => {
 
 // Dashboard stats (duplicate of /dashboard for compatibility)
 router.get('/stats', authenticate, authorize('admin'), async (req, res) => {
-router.get('/stats', authenticate, authorize('admin'), async (req, res) => {
   try {
     // Total bookings today
     const todayBookings = await query(
