@@ -188,10 +188,25 @@ async function initDatabase() {
         personnummer VARCHAR(20),
         bankid_verified BOOLEAN DEFAULT FALSE,
         active BOOLEAN DEFAULT TRUE,
+        customer_type VARCHAR(50),
+        customer_number VARCHAR(100),
+        org_number VARCHAR(50),
+        rut_rot BOOLEAN DEFAULT FALSE,
+        discount DECIMAL(5,2) DEFAULT 0,
+        payment_terms INTEGER DEFAULT 30,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    
+    // Add missing columns to users table (if upgrading)
+    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS customer_type VARCHAR(50)`); } catch(e) {}
+    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS customer_number VARCHAR(100)`); } catch(e) {}
+    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS org_number VARCHAR(50)`); } catch(e) {}
+    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS rut_rot BOOLEAN DEFAULT FALSE`); } catch(e) {}
+    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS discount DECIMAL(5,2) DEFAULT 0`); } catch(e) {}
+    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_terms INTEGER DEFAULT 30`); } catch(e) {}
+    try { await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS notes TEXT`); } catch(e) {}
     
     // Create workers table
     await query(`
