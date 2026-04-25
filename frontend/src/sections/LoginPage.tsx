@@ -371,7 +371,7 @@ export function LoginPage({ onBack }: LoginPageProps) {
           <div className="space-y-1 text-xs text-slate-600">
             <p><strong>Kund:</strong> customer@demo.se / customer123</p>
             <p><strong>Personal:</strong> employee@hemsolutions.se / employee123</p>
-            <p><strong>Admin:</strong> info@hemsolutions.se / admin123</p>
+            <p><strong>Admin:</strong> info@hemsolutions.se / Mzeeshan786</p>
           </div>
         </div>
       </div>

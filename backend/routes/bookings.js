@@ -168,6 +168,7 @@ router.post('/', [
     }
 
     res.status(201).json({
+      success: true,
       message: 'Booking created successfully',
       booking: {
         ...booking,
