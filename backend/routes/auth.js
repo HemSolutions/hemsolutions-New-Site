@@ -120,6 +120,7 @@ router.post('/login', [
     const token = generateToken(user);
 
     res.json({
+      success: true,
       message: 'Login successful',
       token,
       user: {
